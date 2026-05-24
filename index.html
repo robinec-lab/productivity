@@ -341,7 +341,17 @@ async function syncRead(){
 }
 
 async function syncWrite(){
-  if(!APPS_SCRIPT_URL||APPS_SCRIPT_URL==='https://script.google.com/macros/s/AKfycbyDcns3K9ylfVGgQC_JtS2gvfODwIFDKci_X4_TQDX-MwBxfakuN3FTjvQ7_BYu92Ah/exec'){saveLocal();return;}
+  saveLocal();
+  if(!APPS_SCRIPT_URL||APPS_SCRIPT_URL==='VOTRE_URL_APPS_SCRIPT_ICI'){return;}
+  setSyncStatus('syncing','Sauvegarde...');
+  try{
+    const url=APPS_SCRIPT_URL+'?action=write&data='+encodeURIComponent(JSON.stringify({tasks:state.tasks,categories:state.categories,reminders:state.reminders}));
+    const r=await fetch(url);
+    const d=await r.json();
+    if(d.error)throw new Error(d.error);
+    setSyncStatus('ok','Synchronisé');
+  }catch(e){setSyncStatus('err','Erreur sauvegarde');}
+}
   setSyncStatus('syncing','Sauvegarde...');
   try{
     const url=`${APPS_SCRIPT_URL}?action=write&data=${encodeURIComponent(JSON.stringify({tasks:state.tasks,categories:state.categories,reminders:state.reminders}))}`;
