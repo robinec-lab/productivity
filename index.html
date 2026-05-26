@@ -581,7 +581,7 @@ function renderReminders() {
 }
 
 function deleteRem(id) {
-  var r = state.reminders.find(function(x) { return x.id === id; });
+  var r = state.reminders.find(function(x) { return Number(x.id) === Number(id); });
   if (!r) return;
   state.reminders = state.reminders.filter(function(x) { return x.id !== id; });
   var t = state.tasks.find(function(x) { return x.id == r.taskId; });
@@ -590,7 +590,7 @@ function deleteRem(id) {
 }
 
 function toggleDone(id) {
-  var t = state.tasks.find(function(x) { return x.id == id; });
+  var t = state.tasks.find(function(x) { return Number(x.id) === Number(id); });
   if (!t) return;
   t.done = !t.done; t.status = t.done ? 'done' : 'todo';
   syncWrite(); render();
@@ -598,14 +598,14 @@ function toggleDone(id) {
 
 function delegateTask(id) {
   var name = prompt('Déléguer à :'); if (!name) return;
-  var t = state.tasks.find(function(x) { return x.id == id; }); if (!t) return;
+  var t = state.tasks.find(function(x) { return Number(x.id) === Number(id); }); if (!t) return;
   t.owner = name; t.status = 'delegated';
   syncWrite(); render(); toast('Délégué à ' + name);
 }
 
 function abandonTask(id) {
   if (!confirm('Abandonner ?')) return;
-  state.tasks.find(function(x) { return x.id == id; }).status = 'abandoned';
+  state.tasks.find(function(x) { return Number(x.id) === Number(id); }).status = 'abandoned';
   syncWrite(); render(); toast('Action abandonnée');
 }
 
@@ -639,7 +639,7 @@ function openNew() {
 }
 
 function editTask(id) {
-  var t = state.tasks.find(function(x) { return x.id == id; }); if (!t) return;
+  var t = state.tasks.find(function(x) { return Number(x.id) === Number(id); }); if (!t) return;
   editId = id;
   document.getElementById('mt-title').textContent = "Modifier l'action";
   document.getElementById('f-title').value = t.title;
