@@ -396,19 +396,25 @@ function syncRead() {
 
 function syncWrite() {
   saveLocal();
-  var data = JSON.stringify({tasks: state.tasks, categories: state.categories, reminders: state.reminders});
-  var url = SCRIPT_URL + '?action=write&data=' + encodeURIComponent(data);
   setSyncStatus('syncing', 'Sauvegarde...');
-  return new Promise(function(resolve) {
-    jsonp(url, function(err, d) {
-      if (err || (d && d.error)) {
-        setSyncStatus('err', 'Erreur sauvegarde');
-      } else {
-        setSyncStatus('ok', 'Synchronisé');
-      }
-      resolve();
+  var data = encodeURIComponent(JSON.stringify({tasks: state.tasks, categories: state.categories, reminders: state.reminders}));
+  var url = SCRIPT_URL + '?action=write&data=' + data;
+  // no-cors : on envoie sans attendre la réponse (contourne CORS)
+  return fetch(url, {method: 'GET', mode: 'no-cors'})
+    .then(function() {
+      setSyncStatus('ok', 'Sauvegardé');
+    })
+    .catch(function(e) {
+      // Fallback : iframe silencieux
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = url;
+      document.body.appendChild(iframe);
+      setTimeout(function() { 
+        document.body.removeChild(iframe); 
+        setSyncStatus('ok', 'Sauvegardé');
+      }, 3000);
     });
-  });
 }
 
 function syncNow() {
