@@ -271,7 +271,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);fon
 <div class="toast" id="toast"><i class="ti ti-check"></i><span id="toast-msg"></span></div>
 
 <script>
-var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDcns3K9ylfVGgQC_JtS2gvfODwIFDKci_X4_TQDX-MwBxfakuN3FTjvQ7_BYu92Ah/exec';
+var SCRIPT_URL = 'https://script.google.com/macros/s/AKfycby-ak0893GAJT-bfQ2lYi-64TiAr7nBbW3Gu3fGqvV-D5ufYXAzTYxeMO2KQ-vqueIt/exec';
 
 var CAT_COLORS = {
   indigo:{bg:'#EEF2FF',tx:'#3730A3',bar:'#6366F1'},
@@ -397,24 +397,20 @@ function syncRead() {
 function syncWrite() {
   saveLocal();
   setSyncStatus('syncing', 'Sauvegarde...');
-  var data = encodeURIComponent(JSON.stringify({tasks: state.tasks, categories: state.categories, reminders: state.reminders}));
-  var url = SCRIPT_URL + '?action=write&data=' + data;
-  // no-cors : on envoie sans attendre la réponse (contourne CORS)
-  return fetch(url, {method: 'GET', mode: 'no-cors'})
-    .then(function() {
-      setSyncStatus('ok', 'Sauvegardé');
-    })
-    .catch(function(e) {
-      // Fallback : iframe silencieux
-      var iframe = document.createElement('iframe');
-      iframe.style.display = 'none';
-      iframe.src = url;
-      document.body.appendChild(iframe);
-      setTimeout(function() { 
-        document.body.removeChild(iframe); 
-        setSyncStatus('ok', 'Sauvegardé');
-      }, 3000);
-    });
+  var payload = JSON.stringify({
+    action: 'write',
+    data: {tasks: state.tasks, categories: state.categories, reminders: state.reminders}
+  });
+  return fetch(SCRIPT_URL, {
+    method: 'POST',
+    mode: 'no-cors',
+    headers: {'Content-Type': 'text/plain'},
+    body: payload
+  }).then(function() {
+    setSyncStatus('ok', 'Sauvegardé');
+  }).catch(function(e) {
+    setSyncStatus('err', 'Erreur sauvegarde');
+  });
 }
 
 function syncNow() {
