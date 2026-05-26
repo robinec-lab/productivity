@@ -350,13 +350,35 @@ function setSyncStatus(status, label) {
   lb.textContent = label;
 }
 
+function jsonp(url, callback) {
+  var cbName = 'cb_' + Date.now();
+  window[cbName] = function(data) {
+    delete window[cbName];
+    document.getElementById('jsonp-script') && document.getElementById('jsonp-script').remove();
+    callback(null, data);
+  };
+  var script = document.createElement('script');
+  script.id = 'jsonp-script';
+  script.src = url + '&callback=' + cbName;
+  script.onerror = function() {
+    delete window[cbName];
+    script.remove();
+    callback(new Error('JSONP error'));
+  };
+  document.head.appendChild(script);
+}
+
 function syncRead() {
   setSyncStatus('syncing', 'Chargement...');
-  return fetch(SCRIPT_URL + '?action=read')
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.error) throw new Error(d.error);
-      if (d.tasks !== undefined) {
+  return new Promise(function(resolve, reject) {
+    jsonp(SCRIPT_URL + '?action=read', function(err, d) {
+      if (err) {
+        setSyncStatus('err', 'Erreur sync');
+        loadLocal();
+        resolve();
+        return;
+      }
+      if (d && d.tasks !== undefined) {
         state.tasks = d.tasks || [];
         if (d.categories && d.categories.length > 0) state.categories = d.categories;
         state.reminders = d.reminders || [];
@@ -367,11 +389,9 @@ function syncRead() {
       }
       setSyncStatus('ok', 'Synchronisé');
       render();
-    })
-    .catch(function(e) {
-      setSyncStatus('err', 'Erreur sync');
-      loadLocal();
+      resolve();
     });
+  });
 }
 
 function syncWrite() {
@@ -379,15 +399,16 @@ function syncWrite() {
   var data = JSON.stringify({tasks: state.tasks, categories: state.categories, reminders: state.reminders});
   var url = SCRIPT_URL + '?action=write&data=' + encodeURIComponent(data);
   setSyncStatus('syncing', 'Sauvegarde...');
-  return fetch(url)
-    .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (d.error) throw new Error(d.error);
-      setSyncStatus('ok', 'Synchronisé');
-    })
-    .catch(function(e) {
-      setSyncStatus('err', 'Erreur sauvegarde');
+  return new Promise(function(resolve) {
+    jsonp(url, function(err, d) {
+      if (err || (d && d.error)) {
+        setSyncStatus('err', 'Erreur sauvegarde');
+      } else {
+        setSyncStatus('ok', 'Synchronisé');
+      }
+      resolve();
     });
+  });
 }
 
 function syncNow() {
